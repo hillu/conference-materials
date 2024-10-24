@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="288" width="368" viewBox="0 0 368 288" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px">
+<path d="M 8,64 L 8,128" fill="none" stroke="black"/>
+<path d="M 56,192 L 56,256" fill="none" stroke="black"/>
+<path d="M 72,16 L 72,64" fill="none" stroke="black"/>
+<path d="M 72,192 L 72,224" fill="none" stroke="black"/>
+<path d="M 96,64 L 96,128" fill="none" stroke="black"/>
+<path d="M 136,16 L 136,32" fill="none" stroke="black"/>
+<path d="M 152,32 L 152,80" fill="none" stroke="black"/>
+<path d="M 200,64 L 200,128" fill="none" stroke="black"/>
+<path d="M 216,192 L 216,224" fill="none" stroke="black"/>
+<path d="M 232,192 L 232,256" fill="none" stroke="black"/>
+<path d="M 272,64 L 272,128" fill="none" stroke="black"/>
+<path d="M 280,176 L 280,208" fill="none" stroke="black"/>
+<path d="M 360,176 L 360,208" fill="none" stroke="black"/>
+<path d="M 72,16 L 136,16" fill="none" stroke="black"/>
+<path d="M 136,32 L 152,32" fill="none" stroke="black"/>
+<path d="M 8,64 L 96,64" fill="none" stroke="black"/>
+<path d="M 200,64 L 272,64" fill="none" stroke="black"/>
+<path d="M 96,80 L 152,80" fill="none" stroke="black"/>
+<path d="M 8,128 L 96,128" fill="none" stroke="black"/>
+<path d="M 200,128 L 272,128" fill="none" stroke="black"/>
+<path d="M 280,176 L 360,176" fill="none" stroke="black"/>
+<path d="M 56,192 L 232,192" fill="none" stroke="black"/>
+<path d="M 280,208 L 360,208" fill="none" stroke="black"/>
+<path d="M 72,224 L 216,224" fill="none" stroke="black"/>
+<path d="M 56,256 L 232,256" fill="none" stroke="black"/>
+<path d="M 80,128 L 108,184" fill="none" stroke="black"/>
+<path d="M 256,128 L 276,168" fill="none" stroke="black"/>
+<path d="M 176,192 L 204,136" fill="none" stroke="black"/>
+<path d="M 136,16 C 144.83064,16 152,23.16936 152,32" fill="none" stroke="black"/>
+<polygon class="arrowhead" points="284,168 272,162.4 272,173.6" fill="black" transform="rotate(63.43494882292201,276,168)"/>
+<polygon class="arrowhead" points="212,136 200,130.4 200,141.6" fill="black" transform="rotate(296.565051177078,204,136)"/>
+<polygon class="arrowhead" points="116,184 104,178.4 104,189.6" fill="black" transform="rotate(63.43494882292201,108,184)"/>
+<g class="text">
+<text x="112" y="52">Ruleset</text>
+<text x="52" y="100">auditctl</text>
+<text x="236" y="100">auditd</text>
+<text x="160" y="148">raw</text>
+<text x="48" y="164">configure</text>
+<text x="164" y="164">events</text>
+<text x="320" y="196">log files</text>
+<text x="144" y="212">Audit subsystem</text>
+<text x="116" y="244">Linux Kernel</text>
+</g>
+</svg>
