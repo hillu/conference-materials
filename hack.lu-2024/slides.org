@@ -43,6 +43,27 @@
   - Basic format is well documented
   - Semantics are well understood
 
+# * Linux Audit Subsystem
+
+# #+begin_src text
+#           .-------+.              
+#           |       '-+                  
+#           | Ruleset +                    
+#   .-------+--.      |     .--------.     
+#   |          +------'     |        |       +--------+
+#   | auditctl |            | auditd +--+--->| plugin |
+#   |          |            |        |   \   +--+-----+--+
+#   '--------+-'            +------+-'    '---->| plugin |
+#             \       raw   ^       \           +--------+
+#    configure \     events/         v   
+#               v         /           +-------+-.
+#         +-.----+-------+----.-+     |log files|
+#         | | Audit subsystem | |     '---------'
+#         | '-----------------' |
+#         | Linux Kernel        |
+#         +---------------------'
+# #+end_src
+
 * Linux Audit Subsystem
 
 # Image

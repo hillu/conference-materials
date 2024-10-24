@@ -8,10 +8,10 @@
   '--------+-'            +------+-'   +------+-'
             \       raw   ^       \            \ 
    configure \     events/         v            v
-              v         /           +-------+-.  +-------+---.
-        +-.----+-------+----.-+     |log files|  |log files  |
-        | | Audit subsystem | |     |(KV mess)|  |(JSONlines)|
-        | '-----------------' |     '---------'  '-----------'
-        | Linux Kernel        |
+              v         /           +---------.  +-----------.
+        +-.----+-------+----.-+     |log files|  |enriched   |
+        | | Audit subsystem | |     |(KV mess)|  |log files  |
+        | '-----------------' |     '---------'  |(JSONlines)|
+        | Linux Kernel        |                  '-----------'
         +---------------------'
 
