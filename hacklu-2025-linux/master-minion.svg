@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="352" width="568" viewBox="0 0 568 352" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px">
+<path d="M 8,160 L 8,192" fill="none" stroke="black"/>
+<path d="M 88,160 L 88,192" fill="none" stroke="black"/>
+<path d="M 144,144 L 144,224" fill="none" stroke="black"/>
+<path d="M 168,16 L 168,64" fill="none" stroke="black"/>
+<path d="M 232,144 L 232,224" fill="none" stroke="black"/>
+<path d="M 256,16 L 256,64" fill="none" stroke="black"/>
+<path d="M 304,144 L 304,224" fill="none" stroke="black"/>
+<path d="M 328,64 L 328,112" fill="none" stroke="black"/>
+<path d="M 328,256 L 328,288" fill="none" stroke="black"/>
+<path d="M 400,64 L 400,112" fill="none" stroke="black"/>
+<path d="M 400,256 L 400,288" fill="none" stroke="black"/>
+<path d="M 424,144 L 424,224" fill="none" stroke="black"/>
+<path d="M 480,80 L 480,288" fill="none" stroke="black"/>
+<path d="M 560,80 L 560,288" fill="none" stroke="black"/>
+<path d="M 168,16 L 256,16" fill="none" stroke="black"/>
+<path d="M 168,64 L 256,64" fill="none" stroke="black"/>
+<path d="M 328,64 L 400,64" fill="none" stroke="black"/>
+<path d="M 480,80 L 560,80" fill="none" stroke="black"/>
+<path d="M 272,96 L 320,96" fill="none" stroke="black"/>
+<path d="M 408,96 L 472,96" fill="none" stroke="black"/>
+<path d="M 328,112 L 400,112" fill="none" stroke="black"/>
+<path d="M 144,144 L 232,144" fill="none" stroke="black"/>
+<path d="M 304,144 L 424,144" fill="none" stroke="black"/>
+<path d="M 8,160 L 88,160" fill="none" stroke="black"/>
+<path d="M 96,176 L 136,176" fill="none" stroke="black"/>
+<path d="M 240,176 L 296,176" fill="none" stroke="black"/>
+<path d="M 432,176 L 472,176" fill="none" stroke="black"/>
+<path d="M 8,192 L 88,192" fill="none" stroke="black"/>
+<path d="M 144,224 L 232,224" fill="none" stroke="black"/>
+<path d="M 304,224 L 424,224" fill="none" stroke="black"/>
+<path d="M 328,256 L 400,256" fill="none" stroke="black"/>
+<path d="M 280,272 L 320,272" fill="none" stroke="black"/>
+<path d="M 408,272 L 472,272" fill="none" stroke="black"/>
+<path d="M 328,288 L 400,288" fill="none" stroke="black"/>
+<path d="M 480,288 L 560,288" fill="none" stroke="black"/>
+<path d="M 232,176 L 280,272" fill="none" stroke="black"/>
+<path d="M 256,64 L 272,96" fill="none" stroke="black"/>
+<path d="M 424,320 L 444,280" fill="none" stroke="black"/>
+<polygon class="arrowhead" points="452,280 440,274.4 440,285.6" fill="black" transform="rotate(296.565051177078,444,280)"/>
+<polygon class="arrowhead" points="328,272 316,266.4 316,277.6" fill="black" transform="rotate(0,320,272)"/>
+<polygon class="arrowhead" points="328,96 316,90.4 316,101.6" fill="black" transform="rotate(0,320,96)"/>
+<polygon class="arrowhead" points="304,176 292,170.4 292,181.6" fill="black" transform="rotate(0,296,176)"/>
+<polygon class="arrowhead" points="144,176 132,170.4 132,181.6" fill="black" transform="rotate(0,136,176)"/>
+<g class="text">
+<text x="212" y="36">external</text>
+<text x="204" y="52">Client</text>
+<text x="364" y="84">external</text>
+<text x="364" y="100">Minion</text>
+<text x="360" y="132">|</text>
+<text x="168" y="164">TCP</text>
+<text x="520" y="164">NFS</text>
+<text x="44" y="180">Client</text>
+<text x="172" y="180">Load</text>
+<text x="364" y="180">Velociraptor</text>
+<text x="188" y="196">Balancer</text>
+<text x="340" y="196">Master</text>
+<text x="520" y="196">Storage</text>
+<text x="360" y="244">|</text>
+<text x="364" y="276">Minion</text>
+<text x="396" y="340">I(O bottleneck</text>
+</g>
+</svg>

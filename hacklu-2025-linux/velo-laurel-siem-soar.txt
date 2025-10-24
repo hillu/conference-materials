@@ -1,0 +1,13 @@
+
+                                 .------.    Alerts
+.---------------.  Events  .---->| SIEM |--------.
+| Linux Server  |   Logs  /      '------'         \
++===============+        /                         v
+| auditd+laurel |-------'                          .------.
++---------------+                                  | SOAR |
+| Velociraptor  |<------.                          '------'
+| Client        |        \    ,--------------.     /
++---------------+         \   | Velociraptor |    / schedule jobs
+                     run   '--| Server       |<--'
+                  artifacts   '--------------'
+                                             

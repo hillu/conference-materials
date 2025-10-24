@@ -1,0 +1,127 @@
+#+TITLE: Instrumenting software builds to detect stealth backdoors and other curiosities
+#+AUTHOR: Hilko Bengen
+#+DATE: 2025-10-23
+
+* $ whoami
+
+- CSIRT analyst with a threat intelligence / Linux detection engineering focus
+- Free/Open Source Software enthusiast
+- Debian Developer for > 20 years
+
+* Inspiration
+
+- [[https://archive.fosdem.org/2025/schedule/event/fosdem-2025-5224-finding-anomalies-in-the-debian-packaging-system-to-detect-supply-chain-attacks/][Finding Anomalies in the Debian Packaging System to Detect Supply Chain Attacks]], Tobias Specht, FOSDEM 2025
+- Basic idea
+  - Instrument compiler toolchain
+  - Build a "supply graph"
+  - Trace build artifacts back to their sources
+  - Find anomalies in the supply graph
+
+* Really Simple Example: hello world
+
+- Let's take a look at [[https://www.gnu.org/software/hello/][GNU hello]]
+  - Single source file =src/hello.c=
+  - Compiles to =src/hello.o=
+  - Linked to =hello=
+- Simple sources, simple result.
+  #+begin_src text
+    $ hello
+    Hello, world!
+  #+end_src
+
+* Really Simple Example: hello world
+
+#+ATTR_HTML: :height 120px
+[[file:sourcegraph.svg]]
+
+(or so one might think)
+
+* Easy, right?
+- Not so fast…
+  #+begin_src 
+    lib/c-ctype.c lib/c-strcasecmp.c lib/c-strncasecmp.c
+    lib/close-stream.c lib/closeout.c lib/dirname.c lib/basename.c
+    lib/dirname-lgpl.c lib/basename-lgpl.c lib/stripslash.c lib/exitfail.c
+    lib/localcharset.c lib/progname.c lib/quotearg.c lib/strnlen1.c
+    lib/unistd.c lib/wctype-h.c lib/xmalloc.c lib/xalloc-die.c
+    lib/xstrndup.c
+  #+end_src
+- …get compiled into corresponding =.o= files and linked linked into =lib/libhello.a=
+- Result is statically linked with =hello.o= into =hello= executable
+
+* Moar dependencies
+
+#+ATTR_HTML: :height 450px
+[[file:sourcegraph2.svg]]
+
+* Looking for patterns: Compiling
+
+- Main compiler call =gcc -o src/hello.o src/hello.c=
+  - Runs first compiler stage: =cc1 src/hello.c -o /tmp/ccspfdss.s=
+    - Reads =hello.c= and many =*.h= header files as part of pre-processing
+    - Generates assembly
+  - Runs assembler =as -o src/hello.o /tmp/ccspfdss.s=
+    - Produces object code from assembly
+
+* Looking for patterns: Linking
+
+- Static linking:
+  =ar cru lib/libhello.a lib/c-ctype.o lib/c-strcasecmp.o lib/c-strncasecmp.o […]=
+  - Reads many object files containing utility functions
+  - Produces object archive =libhello.a=
+
+* Looking for patterns: Linking
+
+- Linking of executable
+  =gcc -o hello src/hello.o ./lib/libhello.a=
+  - Spawns linker frontend
+    =collect2 -o hello src/hello.o ./lib/libhello.a=
+    - Spawns actual linker
+      =ld -o hello src/hello.o ./lib/libhello.a=
+      - Reads object files, archive
+      - Produces final binary
+
+* Constructing the source graph
+
+Assuming no network activity…
+- A limited number of operations is sufficient:
+  - File open (read)
+  - File open (write)
+  - File rename operations
+  - Subprocesses creation (=fork+execve=)
+
+* Implementation
+
+- Should not rely on compiler implementation details
+- Using =LD_PRELOAD= to instrument the build toolchain works – but not for statially linked tools
+- Using =strace= works in general, has high overhead, even if we limit ourselves to a handful of syscalls.
+- eBPF probes to the rescue?!
+- Source graph generator creates report as JSON document
+  - Process tree
+  - Process <-> file mapping
+
+* What can we observe?
+
+- The XZ backdoor (CVE-2024-3094)
+  - =liblzma_la-crc64-fast.o= is not created by a linker binary.
+  - =crc64_fast.c= source code is overwritten using =sed=.
+- Reproducability bugs: Multiple processes overwriting the same intermediate object files
+
+* Plans
+
+- Clean up source code, release as part of initial [[https://github.com/threathunters-io/yanny][Yanny]] release ([[https://github.com/threathunters-io/laurel][Laurel]] successor project)
+- Provide scripts that recognize typical compiler toolchain behavior, warn about everything else
+- Provide CI integration (Github actions etc.) around reporting and analyzing the rport
+
+* Thank you for your attention
+
+Slides will be published here:
+
+#+ATTR_HTML: :height 200
+[[file:talk-url.png]]
+
+([[https://hillu.github.io/conference-materials/hacklu-2025-build/slides.reveal.html][https://hillu.github.io/conference-materials/hacklu-2025-build/slides.reveal.html]]) 
+
+Contact me at
+
+Hilko Bengen <[[mailto:bengen@hilluzination.de][bengen@hilluzination.de]]> @hillu@infosec.exchange

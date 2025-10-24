@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="80" width="640" viewBox="0 0 640 80" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px">
+<path d="M 8,16 L 8,64" fill="none" stroke="black"/>
+<path d="M 72,16 L 72,32" fill="none" stroke="black"/>
+<path d="M 88,32 L 88,64" fill="none" stroke="black"/>
+<path d="M 120,16 L 120,64" fill="none" stroke="black"/>
+<path d="M 160,16 L 160,64" fill="none" stroke="black"/>
+<path d="M 192,16 L 192,64" fill="none" stroke="black"/>
+<path d="M 264,16 L 264,32" fill="none" stroke="black"/>
+<path d="M 280,32 L 280,64" fill="none" stroke="black"/>
+<path d="M 312,16 L 312,64" fill="none" stroke="black"/>
+<path d="M 352,16 L 352,64" fill="none" stroke="black"/>
+<path d="M 384,16 L 384,64" fill="none" stroke="black"/>
+<path d="M 448,16 L 448,32" fill="none" stroke="black"/>
+<path d="M 464,32 L 464,64" fill="none" stroke="black"/>
+<path d="M 496,16 L 496,64" fill="none" stroke="black"/>
+<path d="M 536,16 L 536,64" fill="none" stroke="black"/>
+<path d="M 568,16 L 568,64" fill="none" stroke="black"/>
+<path d="M 616,16 L 616,32" fill="none" stroke="black"/>
+<path d="M 632,32 L 632,64" fill="none" stroke="black"/>
+<path d="M 8,16 L 72,16" fill="none" stroke="black"/>
+<path d="M 120,16 L 160,16" fill="none" stroke="black"/>
+<path d="M 192,16 L 264,16" fill="none" stroke="black"/>
+<path d="M 312,16 L 352,16" fill="none" stroke="black"/>
+<path d="M 384,16 L 448,16" fill="none" stroke="black"/>
+<path d="M 496,16 L 536,16" fill="none" stroke="black"/>
+<path d="M 568,16 L 616,16" fill="none" stroke="black"/>
+<path d="M 72,32 L 88,32" fill="none" stroke="black"/>
+<path d="M 264,32 L 280,32" fill="none" stroke="black"/>
+<path d="M 448,32 L 464,32" fill="none" stroke="black"/>
+<path d="M 616,32 L 632,32" fill="none" stroke="black"/>
+<path d="M 96,48 L 112,48" fill="none" stroke="black"/>
+<path d="M 168,48 L 184,48" fill="none" stroke="black"/>
+<path d="M 288,48 L 304,48" fill="none" stroke="black"/>
+<path d="M 360,48 L 376,48" fill="none" stroke="black"/>
+<path d="M 472,48 L 488,48" fill="none" stroke="black"/>
+<path d="M 544,48 L 560,48" fill="none" stroke="black"/>
+<path d="M 8,64 L 88,64" fill="none" stroke="black"/>
+<path d="M 120,64 L 160,64" fill="none" stroke="black"/>
+<path d="M 192,64 L 280,64" fill="none" stroke="black"/>
+<path d="M 312,64 L 352,64" fill="none" stroke="black"/>
+<path d="M 384,64 L 464,64" fill="none" stroke="black"/>
+<path d="M 496,64 L 536,64" fill="none" stroke="black"/>
+<path d="M 568,64 L 632,64" fill="none" stroke="black"/>
+<path d="M 72,16 C 80.83064,16 88,23.16936 88,32" fill="none" stroke="black"/>
+<path d="M 264,16 C 272.83064,16 280,23.16936 280,32" fill="none" stroke="black"/>
+<path d="M 448,16 C 456.83064,16 464,23.16936 464,32" fill="none" stroke="black"/>
+<path d="M 616,16 C 624.83064,16 632,23.16936 632,32" fill="none" stroke="black"/>
+<polygon class="arrowhead" points="568,48 556,42.4 556,53.6" fill="black" transform="rotate(0,560,48)"/>
+<polygon class="arrowhead" points="496,48 484,42.4 484,53.6" fill="black" transform="rotate(0,488,48)"/>
+<polygon class="arrowhead" points="384,48 372,42.4 372,53.6" fill="black" transform="rotate(0,376,48)"/>
+<polygon class="arrowhead" points="312,48 300,42.4 300,53.6" fill="black" transform="rotate(0,304,48)"/>
+<polygon class="arrowhead" points="192,48 180,42.4 180,53.6" fill="black" transform="rotate(0,184,48)"/>
+<polygon class="arrowhead" points="120,48 108,42.4 108,53.6" fill="black" transform="rotate(0,112,48)"/>
+<g class="text">
+<text x="48" y="52">hello.c</text>
+<text x="140" y="52">cc</text>
+<text x="236" y="52">$tmpfile</text>
+<text x="332" y="52">as</text>
+<text x="424" y="52">hello.ö</text>
+<text x="516" y="52">ld</text>
+<text x="600" y="52">hello</text>
+</g>
+</svg>
