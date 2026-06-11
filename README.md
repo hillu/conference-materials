@@ -5,3 +5,4 @@
 - [Detection and Response for Linux without EDR](https://hillu.github.io/conference-materials/hack.lu-2024/slides.reveal.html), hack.lu 2024 ([sources](hack.lu-2024/))
 - [Instrumenting software builds to detect stealth backdoors and other curiosities](https://hillu.github.io/conference-materials/hacklu-2025-build/slides.reveal.html), hack.lu 2025 ([source](hacklu-2025-build))
 - [Security Monitoring & Response for Large Linux Environments](https://hillu.github.io/conference-materials/hacklu-2025-linux/slides.reveal.html), hack.lu 2025  ([source](hacklu-2025-linux))
+- [Linux Rootkit Detection: Improving Unwieldy Tools For a Simple Problem](https://hillu.github.io/conference-materials/0ct0b3rf3st-2026/slides.reveal.html), 0ct0b3rf3st 2026 ([source](0ct0b3rf3st-2026))

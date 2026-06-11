@@ -1,0 +1,199 @@
+#+TITLE: Linux Rootkit Detection: Improving Unwieldy Tools For a Simple Problem
+#+AUTHOR: Hilko Bengen
+#+DATE: 2026-06-12
+#+SUBTITLE: TLP Clear
+
+* Agenda
+
+- How do Unix/Linux rootkits work?
+- How can we detect rootkits?
+- Novel techniques
+- What is needed for Hunting at scale?
+- Our contribution
+
+* What's a rootkit?
+
+- Whatever a malcious actor needs to keep access and stay undetected on a Unix system
+- Today: Stealth; hiding processes, files, file contents, network activity
+- Evolution in implementations
+  - libc hooks, dynamic linker subversion
+  - kernel modules
+  - BPF hooks
+
+* Hiding files, processes from the user
+
+- Goal: hide scripts or stashes from =ls= or =find=
+- Technique: Manipulate output of directory reading calls: Specific entries are removed from the return buffer
+- Also works for processes: =/proc/$PID/= directory entries
+
+* Hooking =getdents64= (1)
+
+- "get directory entries"
+- More efficient variant of the old =readdir= syscall: Writes multiple directory entries into user-provided buffer
+
+#+begin_src c
+  ssize_t getdents64(int fd, void dirp[.count], size_t count);  
+
+  struct linux_dirent64 {
+      ino64_t        d_ino;    /* 64-bit inode number */
+      off64_t        d_off;    /* Not an offset; see getdents() */
+      unsigned short d_reclen; /* Size of this dirent */
+      unsigned char  d_type;   /* File type */
+      char           d_name[]; /* Filename (null-terminated) */
+  };
+#+end_src
+
+* Hooking =getdents64= (2)
+
+Read a directory containing =foo bar baz quux HIDEME=:
+#+ATTR_HTML: :height 400px
+[[file:getdents-1a.svg]]
+
+* Hooking =getdents64= (3)
+
+syscall or libc hook copies remaining data over =HIDEME=:
+#+ATTR_HTML: :height 400px
+[[file:getdents-2a.svg]]
+
+* Hiding file contents from the user
+
+- Goal: hide suspicious activity after rootkit has been activated
+- Technique: Hook =read= call, recognize hide start and end markers
+- For example, parts of a patched init script
+  #+begin_src bash
+    #<HIDE_USER>
+    if [ -e rootkit.ko ]; then
+        /sbin/insmod rootkit.ko
+    fi
+    #</HIDE_USER>
+  #+end_src
+
+* General detection strategy
+
+- Don't worry about finding specific rootkit IoCs
+- Files, processes are still there
+- We just have to find them
+- Trace elements may be enough!
+- We can compare results from different methods
+
+* Process enumeration
+
+- Brute-forcing is feasible! $pid\_max \le 4194304$
+- Open or change directory to =/proc/$PID=
+- Many syscalls operate on a process ID. "No error" or something
+  permission-related tells us that a process with a given PID exists.
+
+=kill pidfd_open getpgid getpriority getsid ioprio_get prlimit64 rt_sigqueueinfo rt_tgsigqueueinfo sched_getaffinity sched_getattr sched_getparam sched_getscheduler sched_rr_get_interval=
+
+* Detecting file content masking
+
+#+begin_src bash
+  #<HIDE_USER>
+  if [ -e rootkit.ko ]; then
+      /sbin/insmod rootkit.ko
+  fi
+  #</HIDE_USER>
+#+end_src
+
+- Tag-based hiding does not work with small buffers
+- Read hooks don't affect memory-mapped file access
+- Mismatch between apparent file size and bytes read
+
+* New process enumeration techniques
+
+- Recursively enumerate process children
+  - starting with =init= and =kthreadd= (pid 1, 2)
+  - =/proc/$PID/task/$TID/children=
+- Enumerate cgroups and threads in cgroups
+  - =/sys/fs/cgroup/*/cgroup.threads=
+
+* New file enumeration technique around =getdents64= corner case
+
+- Rootkits hide files and processes by removing entries before returning control to calling code
+- We can call =getdents64= with mininal buffer sizes.
+- Buffer as produced by kernel code should contain exactly one entry
+- Hooked call "can't" just return an empty buffer
+
+* Hunting at scale
+
+- Run tools with these techniques on the wohle fleet
+- No external dependencies, please.
+- Would like machine-readable parseable output
+
+* Existing tools
+
+- [[http://rkhunter.sourceforge.net/][rkhhunter]] (shell+Perl): checks for indicators of well-known rootkits
+- [[http://www.chkrootkit.org/][chkrootkit]] (shell+C): checks for modified system binaries, utmp/wtmp/lastlog deletions, network interfaces in promiscuous mode, signs of kernel modules
+- [[https://www.unhide-forensics.info][unhide]] (C): implementation of various brute force and syscall scanning
+  techniques
+- [[https://launchpad.net/unhide.rb][unhide.rb]] (Ruby): Reimplementation of unhide
+
+* =rk-expose=
+
+- Smallish (< 1MB) statically linked Rust binary
+- Various techniques whose results can be compared
+  - 5 process listing + 15 process brute-forcing methods
+  - 3 file listing methods
+  - 4 file content read methods
+- JSON or "human readable" output
+- ("Auto" mode that tells us the kind of rootkit found)
+- (Velociraptor integration)
+- Available at https://codeberg.org/hillu/rk-expose, GPLv3
+
+#+ATTR_HTML: :height 
+[[file:project-url.svg]]
+
+* =rk-expose=
+
+Finding hidden processes:
+
+#+begin_src
+# rk-expose ps-diff
+Differences between: [children, getdents, readdir]
+- No anomalies found using 'children'
+- No anomalies found using 'getdents'
+- Missing processes in 'readdir':
+  -    3273  boopkit           /usr/bin/boopkit
+  -    3274  boopkit           /usr/bin/boopkit
+#+end_src
+
+Finding hidden files:
+
+#+begin_src 
+$ rk-expose ls-diff .
+Differences between: [getdents, readdir]
+- No anomalies found using 'getdents'
+- Missing paths in 'readdir':
+  - - ./diamorphine_secret_file
+#+end_src
+
+* Limits
+
+- General warning: "No findings" does not mean "no adversary"!
+- Looking for anomalies at the surface does not catch more elaborate illusions
+  - The [[https://github.com/MatheuZSecurity/Singularity][Singularity]] rootkit is being actively developed and a space to watch
+- There may be other robust ways to hide directory entries
+  - (I'm only aware of utterly broken ones)
+- Looking for traces of "missing" processes does not help against process blend-in techniques
+
+* What's next
+
+- BPF iterator based process enumeration
+- More techniques around anomalies, e.g.:
+  - file sizes
+  - directory link counts
+  - non-procfs filesystem for =/proc/$PID=
+- Direct disk access for file enumeration:
+  - easy for ext4 file systems
+- I'd like to hear about your ideas!
+
+* Thank you for your attention
+
+Slides will be published here:
+
+#+ATTR_HTML: :height 
+[[file:talk-url.svg]]
+
+Contact me at
+
+Hilko Bengen <[[mailto:bengen@hilluzination.de][bengen@hilluzination.de]]> @hillu@infosec.exchange
