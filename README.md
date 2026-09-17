@@ -6,3 +6,4 @@
 - [Instrumenting software builds to detect stealth backdoors and other curiosities](https://hillu.github.io/conference-materials/hacklu-2025-build/slides.reveal.html), hack.lu 2025 ([source](hacklu-2025-build))
 - [Security Monitoring & Response for Large Linux Environments](https://hillu.github.io/conference-materials/hacklu-2025-linux/slides.reveal.html), hack.lu 2025  ([source](hacklu-2025-linux))
 - [Linux Rootkit Detection: Improving Unwieldy Tools For a Simple Problem](https://hillu.github.io/conference-materials/0ct0b3rf3st-2026/slides.reveal.html), 0ct0b3rf3st 2026 ([source](0ct0b3rf3st-2026))
+- [Linux Rootkit Detection: Know where to look in user space](https://hillu.github.io/conference-materials/balccon-2k26/slides.reveal.html), BalCCon 2k26, ([source](balccon-2k26))
